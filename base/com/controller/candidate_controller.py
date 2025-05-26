@@ -1,7 +1,8 @@
 import os
 import json
 import uuid
-from flask import Blueprint, render_template, request
+from uuid import UUID
+from flask import Blueprint, render_template, request, jsonify
 from base.com.dao.candidated_dao import CandidateDAO
 from base.com.utils.helpers import extract_text_from_pdf
 from base.com.services.gemini_service import parse_resume
@@ -15,7 +16,18 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 def Home():
     candidate_dao = CandidateDAO()
     results = candidate_dao.get_all_candidate()
-    return render_template('candidate.html', records=results)
+    print(results[0][0])
+    serializable_results = [
+        {
+            'id': str(record[0]),
+            'name': record[1],
+            'email': record[2],
+            'phone': record[3]
+        }
+        for record in results
+    ]
+
+    return jsonify(serializable_results)
 
 @candidate_blueprint.route('/upload_resumes')
 def upload_resumes():
@@ -23,6 +35,7 @@ def upload_resumes():
 
 @candidate_blueprint.route('/upload_bulk', methods=['POST'])
 def upload_bulk():
+    print(request)
     if 'files' not in request.files:
         return "No file part", 400
     
